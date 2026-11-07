@@ -2721,8 +2721,9 @@ pub fn prepare_indirect_parameters_build_jobs(
     }
 }
 
-/// emm: joins each range that starts where the one before it ends. Each build job is a dispatch in
-/// each of the three `*_build_indirect_parameters` passes, behind a barrier, and a sorted phase has a
+/// emm: joins each range that starts where the one before it ends. Each build job is a dispatch,
+/// behind a barrier, in each of bevy_pbr's early, late and main `*_build_indirect_parameters` passes
+/// for a camera, and in its early and late shadow passes for a shadow view; a sorted phase has a
 /// batch set every few draws. The shader reads a job only as `[first_batch_index,
 /// last_batch_index)`, and each batch's own batch set, so a joined job builds the same batches.
 fn join_contiguous(ranges: &[Range<u32>]) -> Vec<Range<u32>> {
@@ -3213,13 +3214,16 @@ mod tests {
         assert_eq!(instance_buffer.buffer().len(), 1);
     }
 
-    // emm: contiguous ranges join, in order; a gap or a step back starts a new range.
+    // emm: contiguous ranges join, in order; a gap or a step back starts a new range. A view or mesh
+    // class with no batches flushes an empty `n..n` range every frame: it joins like any other, and
+    // alone it stays a job of no batches.
     #[test]
     fn contiguous_batch_ranges_join() {
         assert_eq!(
             join_contiguous(&[0..2, 2..3, 3..7, 9..10, 10..12, 4..5]),
             [0..7, 9..12, 4..5]
         );
+        assert_eq!(join_contiguous(&[0..3, 3..3, 3..5, 8..8]), [0..5, 8..8]);
         assert!(join_contiguous(&[]).is_empty());
     }
 }
