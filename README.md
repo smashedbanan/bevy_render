@@ -5,7 +5,8 @@ The `bevy_render` 0.20.1 package as published on crates.io (upstream
 `a0577b5c6a7b208719dd761c5c6a7a539e472a97`, path `crates/bevy_render`; see `.cargo_vcs_info.json`),
 with this README in place of Bevy's, as the first commit, so that a `[patch.crates-io]` entry takes
 its dependencies from crates.io as the published crate does. The commits after it are the changes,
-each marked `emm:` in the source. Licensed as upstream: MIT or Apache-2.0 (`LICENSE-MIT`,
+each marked `emm:` in the source, and one fix from upstream `main`, as upstream wrote it and
+unmarked. Licensed as upstream: MIT or Apache-2.0 (`LICENSE-MIT`,
 `LICENSE-APACHE`).
 
 ## Changes
@@ -24,3 +25,16 @@ each marked `emm:` in the source. Licensed as upstream: MIT or Apache-2.0 (`LICE
 - `.cargo-ok` is not tracked. The first commit carried it from the unpacked package, but it is not
   part of the published crate: it is cargo's mark of a finished unpack, which cargo writes into its
   own checkout of this repo.
+
+## Backports from upstream main
+
+A commit from bevyengine/bevy `main` after the 0.20 branch, applied whole to this crate with
+`git format-patch --relative=crates/bevy_render` and `git am`, its upstream author kept. It needed
+no change to apply or build on 0.20.1.
+
+- bevyengine/bevy#25816 (`7c82c4c2`): `DirtySpecializations` finds last frame's pending
+  specialisations and queueings by main entity among this frame's visible entities. 0.20.1 kept
+  the render entity a mesh had when it went pending, so a mesh whose render entity changed while
+  it stayed visible, as adding a component that requires `SyncToRenderWorld` does, lost its
+  pending specialisation. Queueing now drops a pending mesh that is no longer visible, as
+  specialisation already did. smashedbanan/bevy_pbr carries the related bevyengine/bevy#25815.
